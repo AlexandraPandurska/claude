@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tic Tac Toe</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      gap: 20px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      letter-spacing: 0.1em;
+      color: #e94560;
+    }
+
+    #mode-select {
+      display: flex;
+      gap: 8px;
+    }
+
+    .mode-btn {
+      padding: 8px 20px;
+      font-size: 0.9rem;
+      background: #16213e;
+      color: #aaa;
+      border: 2px solid #16213e;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .mode-btn.active {
+      background: #0f3460;
+      color: #fff;
+      border-color: #a8dadc;
+    }
+
+    .mode-btn:hover:not(.active) {
+      border-color: #444;
+      color: #eee;
+    }
+
+    #difficulty {
+      display: flex;
+      gap: 8px;
+      min-height: 36px;
+      align-items: center;
+    }
+
+    .diff-btn {
+      padding: 6px 16px;
+      font-size: 0.85rem;
+      background: #16213e;
+      color: #aaa;
+      border: 2px solid #16213e;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .diff-btn.active {
+      background: #0f3460;
+      color: #fff;
+      border-color: #e94560;
+    }
+
+    .diff-btn:hover:not(.active) {
+      border-color: #444;
+      color: #eee;
+    }
+
+    #status {
+      font-size: 1.2rem;
+      min-height: 1.6em;
+      color: #a8dadc;
+    }
+
+    #board {
+      display: grid;
+      grid-template-columns: repeat(3, 110px);
+      grid-template-rows: repeat(3, 110px);
+      gap: 8px;
+    }
+
+    .cell {
+      background: #16213e;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      user-select: none;
+    }
+
+    .cell:hover:not(.taken) {
+      background: #0f3460;
+      transform: scale(1.04);
+    }
+
+    .cell.x { color: #e94560; }
+    .cell.o { color: #a8dadc; }
+
+    .cell.win {
+      background: #0f3460;
+      animation: pulse 0.4s ease;
+    }
+
+    @keyframes pulse {
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.12); }
+      100% { transform: scale(1); }
+    }
+
+    #scores {
+      display: flex;
+      gap: 32px;
+      font-size: 1rem;
+    }
+
+    .score-box { text-align: center; }
+
+    .score-box .label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #888;
+      margin-bottom: 2px;
+    }
+
+    .score-box .value { font-size: 1.6rem; font-weight: bold; }
+
+    #score-x .value  { color: #e94560; }
+    #score-draw .value { color: #aaa; }
+    #score-o .value  { color: #a8dadc; }
+
+    #restart {
+      padding: 10px 28px;
+      font-size: 1rem;
+      background: #e94560;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    #restart:hover {
+      background: #c73652;
+      transform: scale(1.04);
+    }
+  </style>
+</head>
+<body>
+  <h1>Tic Tac Toe</h1>
+
+  <div id="mode-select">
+    <button class="mode-btn active" data-mode="2p">2 Players</button>
+    <button class="mode-btn" data-mode="cpu">vs Computer</button>
+  </div>
+
+  <div id="difficulty">
+    <button class="diff-btn" data-diff="easy">Easy</button>
+    <button class="diff-btn active" data-diff="hard">Hard</button>
+  </div>
+
+  <div id="scores">
+    <div class="score-box" id="score-x">
+      <div class="label" id="label-x">X Wins</div>
+      <div class="value" id="x-count">0</div>
+    </div>
+    <div class="score-box" id="score-draw">
+      <div class="label">Draws</div>
+      <div class="value" id="draw-count">0</div>
+    </div>
+    <div class="score-box" id="score-o">
+      <div class="label" id="label-o">O Wins</div>
+      <div class="value" id="o-count">0</div>
+    </div>
+  </div>
+
+  <div id="status">X's turn</div>
+
+  <div id="board">
+    <div class="cell" data-i="0"></div>
+    <div class="cell" data-i="1"></div>
+    <div class="cell" data-i="2"></div>
+    <div class="cell" data-i="3"></div>
+    <div class="cell" data-i="4"></div>
+    <div class="cell" data-i="5"></div>
+    <div class="cell" data-i="6"></div>
+    <div class="cell" data-i="7"></div>
+    <div class="cell" data-i="8"></div>
+  </div>
+
+  <button id="restart">New Game</button>
+
+  <script>
+    const WINS = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+    let board, current, over;
+    let mode = '2p';       // '2p' | 'cpu'
+    let difficulty = 'hard'; // 'easy' | 'hard'
+    const scores = { X: 0, O: 0, D: 0 };
+
+    const cells = document.querySelectorAll('.cell');
+    const statusEl = document.getElementById('status');
+    const diffEl = document.getElementById('difficulty');
+
+    // --- Mode / difficulty buttons ---
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        mode = btn.dataset.mode;
+        diffEl.style.visibility = mode === 'cpu' ? 'visible' : 'hidden';
+        document.getElementById('label-o').textContent = mode === 'cpu' ? 'CPU Wins' : 'O Wins';
+        scores.X = scores.O = scores.D = 0;
+        updateScores();
+        init();
+      });
+    });
+
+    document.querySelectorAll('.diff-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        difficulty = btn.dataset.diff;
+        scores.X = scores.O = scores.D = 0;
+        updateScores();
+        init();
+      });
+    });
+
+    // Hide difficulty row initially (2p mode)
+    diffEl.style.visibility = 'hidden';
+
+    // --- Game logic ---
+    function init() {
+      board = Array(9).fill('');
+      current = 'X';
+      over = false;
+      cells.forEach(c => { c.textContent = ''; c.className = 'cell'; });
+      statusEl.textContent = "X's turn";
+    }
+
+    function checkWin(b) {
+      for (const [a, i, c] of WINS) {
+        if (b[a] && b[a] === b[i] && b[a] === b[c]) return [a, i, c];
+      }
+      return null;
+    }
+
+    function applyMove(i, player) {
+      board[i] = player;
+      cells[i].textContent = player;
+      cells[i].classList.add(player.toLowerCase(), 'taken');
+    }
+
+    function endTurn() {
+      const win = checkWin(board);
+      if (win) {
+        win.forEach(idx => cells[idx].classList.add('win'));
+        const label = mode === 'cpu' && current === 'O' ? 'Computer' : current;
+        statusEl.textContent = `${label} wins!`;
+        scores[current]++;
+        updateScores();
+        over = true;
+        return;
+      }
+      if (board.every(v => v)) {
+        statusEl.textContent = "It's a draw!";
+        scores.D++;
+        updateScores();
+        over = true;
+        return;
+      }
+      current = current === 'X' ? 'O' : 'X';
+      if (mode === 'cpu' && current === 'O') {
+        statusEl.textContent = "Computer is thinking…";
+        setTimeout(cpuMove, 300);
+      } else {
+        statusEl.textContent = `${current}'s turn`;
+      }
+    }
+
+    cells.forEach(cell => {
+      cell.addEventListener('click', () => {
+        const i = +cell.dataset.i;
+        if (over || board[i]) return;
+        if (mode === 'cpu' && current === 'O') return; // block clicks during cpu turn
+        applyMove(i, current);
+        endTurn();
+      });
+    });
+
+    // --- CPU ---
+    function cpuMove() {
+      if (over) return;
+      const i = difficulty === 'hard' ? bestMove() : easyMove();
+      applyMove(i, 'O');
+      endTurn();
+    }
+
+    function easyMove() {
+      // 50% chance to play optimally, otherwise random
+      if (Math.random() < 0.5) return bestMove();
+      const empty = board.map((v, i) => v === '' ? i : -1).filter(i => i >= 0);
+      return empty[Math.floor(Math.random() * empty.length)];
+    }
+
+    function bestMove() {
+      let best = -Infinity, move = -1;
+      for (let i = 0; i < 9; i++) {
+        if (board[i]) continue;
+        board[i] = 'O';
+        const score = minimax(board, 0, false);
+        board[i] = '';
+        if (score > best) { best = score; move = i; }
+      }
+      return move;
+    }
+
+    function minimax(b, depth, isMax) {
+      const win = checkWin(b);
+      if (win) return isMax ? -10 + depth : 10 - depth;
+      if (b.every(v => v)) return 0;
+
+      if (isMax) {
+        let best = -Infinity;
+        for (let i = 0; i < 9; i++) {
+          if (b[i]) continue;
+          b[i] = 'O';
+          best = Math.max(best, minimax(b, depth + 1, false));
+          b[i] = '';
+        }
+        return best;
+      } else {
+        let best = Infinity;
+        for (let i = 0; i < 9; i++) {
+          if (b[i]) continue;
+          b[i] = 'X';
+          best = Math.min(best, minimax(b, depth + 1, true));
+          b[i] = '';
+        }
+        return best;
+      }
+    }
+
+    function updateScores() {
+      document.getElementById('x-count').textContent = scores.X;
+      document.getElementById('o-count').textContent = scores.O;
+      document.getElementById('draw-count').textContent = scores.D;
+    }
+
+    document.getElementById('restart').addEventListener('click', init);
+
+    init();
+  </script>
+</body>
+</html>
